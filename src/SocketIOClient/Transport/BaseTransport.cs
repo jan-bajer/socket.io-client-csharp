@@ -82,7 +82,7 @@ namespace SocketIOClient.Transport
             var uri = GetConnectionUri();
             try
             {
-                await ConnectCoreAsync(uri, cancellationToken);
+                await ConnectCoreAsync(uri, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {

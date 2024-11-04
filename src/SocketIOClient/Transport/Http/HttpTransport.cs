@@ -129,7 +129,7 @@ namespace SocketIOClient.Transport.Http
             {
                 StartPolling(_pollingTokenSource.Token);
             }
-            await base.OpenAsync(message);
+            await base.OpenAsync(message).ConfigureAwait(false);
         }
     }
 }

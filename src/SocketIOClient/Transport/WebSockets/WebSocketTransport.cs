@@ -108,7 +108,7 @@ namespace SocketIOClient.Transport.WebSockets
                         {
                             case TransportMessageType.Text:
                                 string text = Encoding.UTF8.GetString(binary, 0, count);
-                                await OnTextReceived(text);
+                                await OnTextReceived(text).ConfigureAwait(false);
                                 break;
                             case TransportMessageType.Binary:
                                 byte[] bytes;
@@ -123,7 +123,7 @@ namespace SocketIOClient.Transport.WebSockets
                                     Buffer.BlockCopy(binary, 0, bytes, 0, bytes.Length);
                                 }
 
-                                await OnBinaryReceived(bytes);
+                                await OnBinaryReceived(bytes).ConfigureAwait(false);
                                 break;
                             case TransportMessageType.Close:
                                 OnError.TryInvoke(new TransportException("Received a Close message"));
@@ -165,7 +165,7 @@ namespace SocketIOClient.Transport.WebSockets
                 if (items[0].Type == SerializedMessageType.Text)
                 {
                     var bytes = Encoding.UTF8.GetBytes(items[0].Text);
-                    await SendAsync(TransportMessageType.Text, bytes, cancellationToken);
+                    await SendAsync(TransportMessageType.Text, bytes, cancellationToken).ConfigureAwait(false);
                     Debug.WriteLine($"[WebSocket⬆] {items[0].Text}");
                 }
 
