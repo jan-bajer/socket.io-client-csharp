@@ -484,36 +484,36 @@ namespace SocketIOClient
 
         private async Task OpenedHandler(IMessage msg)
         {
-                await _transportCompletionSource.Task;
-                _transportCompletionSource = new TaskCompletionSource<bool>();
-                if (Options.AutoUpgrade
-                    && Options.Transport == TransportProtocol.Polling
-                    && msg.Upgrades.Contains("websocket"))
-                {
-                    _ = UpgradeToWebSocket(msg);
-                }
-
-                _openedCompletionSource.SetResult(true);
+            await _transportCompletionSource.Task;
+            _transportCompletionSource = new TaskCompletionSource<bool>();
+            if (Options.AutoUpgrade
+                && Options.Transport == TransportProtocol.Polling
+                && msg.Upgrades.Contains("websocket"))
+            {
+                _ = UpgradeToWebSocket(msg);
             }
+
+            _openedCompletionSource.SetResult(true);
+        }
 
 
         private async Task ConnectedHandler(IMessage msg)
         {
-                await _openedCompletionSource.Task;
-                _openedCompletionSource = new TaskCompletionSource<bool>();
+            await _openedCompletionSource.Task;
+            _openedCompletionSource = new TaskCompletionSource<bool>();
 
-                Id = msg.Sid;
-                Connected = true;
+            Id = msg.Sid;
+            Connected = true;
 
-                OnConnected.TryInvoke(this, EventArgs.Empty);
-                if (_attempts > 0)
-                {
-                    OnReconnected.TryInvoke(this, _attempts);
-                }
-
-                _attempts = 0;
-                _connBackgroundSource.SetResult(null);
+            OnConnected.TryInvoke(this, EventArgs.Empty);
+            if (_attempts > 0)
+            {
+                OnReconnected.TryInvoke(this, _attempts);
             }
+
+            _attempts = 0;
+            _connBackgroundSource.SetResult(null);
+        }
 
         private void DisconnectedHandler()
         {
