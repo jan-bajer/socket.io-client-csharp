@@ -253,7 +253,15 @@ namespace SocketIO.Serializer.MessagePack
         {
             return new SerializedItem
             {
-                Text = "2"
+                Text = MessageTypeConverter.ToString(MessageType.Ping)
+            };
+        }
+
+        public SerializedItem SerializePingProbeMessage()
+        {
+            return new SerializedItem
+            {
+                Text = MessageTypeConverter.ToString(MessageType.PingProbe)
             };
         }
 
@@ -261,7 +269,7 @@ namespace SocketIO.Serializer.MessagePack
         {
             return new SerializedItem
             {
-                Text = "3"
+                Text = MessageTypeConverter.ToString(MessageType.Pong)
             };
         }
 
@@ -269,7 +277,7 @@ namespace SocketIO.Serializer.MessagePack
         {
             return new SerializedItem
             {
-                Text = "5"
+                Text = MessageTypeConverter.ToString(MessageType.Upgrade)
             };
         }
 

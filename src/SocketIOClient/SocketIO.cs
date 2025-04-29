@@ -320,16 +320,47 @@ namespace SocketIOClient
         {
             var options = NewTransportOptions();
             options.OpenedMessage = openedMessage;
+
             for (var i = 0; i < 3; i++)
             {
-                var transport = (WebSocketTransport)NewTransport(TransportProtocol.WebSocket, options);
-                using var cts = new CancellationTokenSource(Options.ConnectionTimeout);
+                WebSocketTransport transport = (WebSocketTransport)NewTransport(TransportProtocol.WebSocket, options);
+
+                TaskCompletionSource<bool> pongProbeTcs = new();
+                using CancellationTokenSource connectionTimeoutCts = new(Options.ConnectionTimeout);
+                CancellationToken connectionTimeoutToken = connectionTimeoutCts.Token;
+
+                connectionTimeoutToken.Register(() =>
+                {
+                    pongProbeTcs.TrySetException(new TimeoutException("The upgrade operation has timed out!"));
+                });
+
                 try
                 {
-                    await transport.ConnectAsync(cts.Token).ConfigureAwait(false);
-                    var message = Serializer.SerializeUpgradeMessage();
+                    await transport.ConnectAsync(connectionTimeoutToken).ConfigureAwait(false);
+
+                    void pongProbeHandler(IMessage msg)
+                    {
+                        if (msg.Type == MessageType.PongProbe)
+                        {
+                            pongProbeTcs.SetResult(true);
+                        }
+                    }
+
+                    transport.OnReceived += pongProbeHandler;
+
+                    SerializedItem message = Serializer.SerializePingProbeMessage();
+
                     await transport
-                        .SendAsync(new List<SerializedItem> { message }, cts.Token)
+                        .SendAsync(new List<SerializedItem> { message }, connectionTimeoutToken)
+                        .ConfigureAwait(false);
+
+                    await pongProbeTcs.Task;
+
+                    transport.OnReceived -= pongProbeHandler;
+
+                    message = Serializer.SerializeUpgradeMessage();
+                    await transport
+                        .SendAsync(new List<SerializedItem> { message }, connectionTimeoutToken)
                         .ConfigureAwait(false);
 
                     Transport.Dispose();
