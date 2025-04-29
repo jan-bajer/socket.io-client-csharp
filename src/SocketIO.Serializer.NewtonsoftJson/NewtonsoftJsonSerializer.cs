@@ -320,8 +320,9 @@ namespace SocketIO.Serializer.NewtonsoftJson
                     ReadOpenedMessage(message, text);
                     break;
                 case MessageType.Ping:
-                    break;
+                case MessageType.PingProbe:
                 case MessageType.Pong:
+                case MessageType.PongProbe:
                     break;
                 case MessageType.Connected:
                     ReadConnectedMessage(message, text, eio);
