@@ -636,9 +636,6 @@ namespace SocketIOClient
                     case MessageType.BinaryAck:
                         BinaryAckMessageHandler(msg);
                         break;
-                    default:
-                        Debug.WriteLine($"Error: {msg.Type}");
-                        break;
                 }
             }
             catch (Exception e)
