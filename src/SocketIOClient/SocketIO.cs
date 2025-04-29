@@ -377,6 +377,8 @@ namespace SocketIOClient
                     OnReconnectError.TryInvoke(this, ex);
                 }
             }
+
+            _openedCompletionSource.SetResult(true);
         }
 
         private async Task<bool> AttemptAsync()
@@ -490,6 +492,7 @@ namespace SocketIOClient
                 && msg.Upgrades.Contains("websocket"))
             {
                 _ = UpgradeToWebSocket(msg);
+                return;
             }
 
             _openedCompletionSource.SetResult(true);
