@@ -310,7 +310,7 @@ namespace SocketIOClient
                         if (canHandle) continue;
                         _connBackgroundSource.SetResult(
                             new ConnectionException($"Cannot connect to server '{ServerUri}'", e));
-                        break;
+                        throw;
                     }
                 }
             }, cancellationToken);
