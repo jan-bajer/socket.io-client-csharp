@@ -348,7 +348,7 @@ namespace SocketIOClient
 
                     transport.OnReceived += pongProbeHandler;
 
-                    SerializedItem message = Serializer.SerializePingUpgradeMessage();
+                    SerializedItem message = Serializer.SerializePingProbeMessage();
 
                     await transport
                         .SendAsync(new List<SerializedItem> { message }, connectionTimeoutToken)

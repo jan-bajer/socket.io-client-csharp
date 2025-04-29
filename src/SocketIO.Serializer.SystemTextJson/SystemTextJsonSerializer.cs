@@ -165,7 +165,6 @@ namespace SocketIO.Serializer.SystemTextJson
         public IMessage Deserialize(EngineIO eio, string text)
         {
             List<MessageType> enums = Enum.GetValues(typeof(MessageType)).Cast<MessageType>().ToList();
-            IEnumerable<string> messageTypes = enums.Select(MessageTypeConverter.ToString);
 
             foreach (MessageType type in enums)
             {
@@ -226,7 +225,7 @@ namespace SocketIO.Serializer.SystemTextJson
             };
         }
 
-        public SerializedItem SerializePingUpgradeMessage()
+        public SerializedItem SerializePingProbeMessage()
         {
             return new SerializedItem
             {

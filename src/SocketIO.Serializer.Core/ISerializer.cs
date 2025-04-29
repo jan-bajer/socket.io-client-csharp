@@ -18,7 +18,7 @@ namespace SocketIO.Serializer.Core
         SerializedItem SerializeConnectedMessage(EngineIO eio, string ns, object auth, IEnumerable<KeyValuePair<string, string>> queries);
 
         SerializedItem SerializePingMessage();
-        SerializedItem SerializePingUpgradeMessage();
+        SerializedItem SerializePingProbeMessage();
         SerializedItem SerializePongMessage();
         SerializedItem SerializeUpgradeMessage();
     }
