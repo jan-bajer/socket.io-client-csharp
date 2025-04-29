@@ -3,14 +3,17 @@ namespace SocketIO.Core
     public enum MessageType
     {
         Opened,
-        Ping = 2,
+        Ping,
         Pong,
-        Connected = 40,
+        PingProbe,
+        PongProbe,
+        Upgrade,
+        Connected,
         Disconnected,
         Event,
         Ack,
         Error,
         Binary,
-        BinaryAck,
+        BinaryAck
     }
 }

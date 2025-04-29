@@ -164,11 +164,17 @@ namespace SocketIO.Serializer.SystemTextJson
 
         public IMessage Deserialize(EngineIO eio, string text)
         {
-            var enums = Enum.GetValues(typeof(MessageType));
+            List<MessageType> enums = Enum.GetValues(typeof(MessageType)).Cast<MessageType>().ToList();
+            IEnumerable<string> messageTypes = enums.Select(MessageTypeConverter.ToString);
+
             foreach (MessageType type in enums)
             {
-                var prefix = ((int)type).ToString();
-                if (!text.StartsWith(prefix)) continue;
+                string prefix = MessageTypeConverter.ToString(type);
+
+                if (!text.StartsWith(prefix))
+                {
+                    continue;
+                }
 
                 var message = NewMessage(type);
                 ReadMessage(message, eio, text.Substring(prefix.Length));
@@ -216,7 +222,15 @@ namespace SocketIO.Serializer.SystemTextJson
         {
             return new SerializedItem
             {
-                Text = "2"
+                Text = MessageTypeConverter.ToString(MessageType.Ping)
+            };
+        }
+
+        public SerializedItem SerializePingUpgradeMessage()
+        {
+            return new SerializedItem
+            {
+                Text = MessageTypeConverter.ToString(MessageType.PingProbe)
             };
         }
 
@@ -224,7 +238,7 @@ namespace SocketIO.Serializer.SystemTextJson
         {
             return new SerializedItem
             {
-                Text = "5"
+                Text = MessageTypeConverter.ToString(MessageType.Upgrade)
             };
         }
 
@@ -232,7 +246,7 @@ namespace SocketIO.Serializer.SystemTextJson
         {
             return new SerializedItem
             {
-                Text = "3"
+                Text = MessageTypeConverter.ToString(MessageType.Pong)
             };
         }
 

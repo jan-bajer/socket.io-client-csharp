@@ -310,33 +310,65 @@ namespace SocketIOClient
                         if (canHandle) continue;
                         _connBackgroundSource.SetResult(
                             new ConnectionException($"Cannot connect to server '{ServerUri}'", e));
-                        throw;
+                        break;
                     }
                 }
             }, cancellationToken);
-        }
+                }
 
         private async Task UpgradeToWebSocket(IMessage openedMessage)
         {
             var options = NewTransportOptions();
             options.OpenedMessage = openedMessage;
+
             for (var i = 0; i < 3; i++)
             {
-                var transport = (WebSocketTransport)NewTransport(TransportProtocol.WebSocket, options);
-                using var cts = new CancellationTokenSource(Options.ConnectionTimeout);
+                WebSocketTransport transport = (WebSocketTransport)NewTransport(TransportProtocol.WebSocket, options);
+
+                TaskCompletionSource<bool> pongProbeTcs = new();
+                using CancellationTokenSource connectionTimeoutCts = new(Options.ConnectionTimeout);
+                CancellationToken connectionTimeoutToken = connectionTimeoutCts.Token;
+
+                connectionTimeoutToken.Register(() =>
+                {
+                    pongProbeTcs.TrySetException(new TimeoutException("The upgrade operation has timed out!"));
+                });
+
                 try
                 {
-                    await transport.ConnectAsync(cts.Token).ConfigureAwait(false);
-                    var message = Serializer.SerializeUpgradeMessage();
+                    await transport.ConnectAsync(connectionTimeoutToken).ConfigureAwait(false);
+
+                    void pongProbeHandler(IMessage msg)
+                    {
+                        if (msg.Type == MessageType.PongProbe)
+                        {
+                            pongProbeTcs.SetResult(true);
+                        }
+                    }
+
+                    transport.OnReceived += pongProbeHandler;
+
+                    SerializedItem message = Serializer.SerializePingUpgradeMessage();
+
                     await transport
-                        .SendAsync(new List<SerializedItem> { message }, cts.Token)
+                        .SendAsync(new List<SerializedItem> { message }, connectionTimeoutToken)
+                        .ConfigureAwait(false);
+
+                    await pongProbeTcs.Task;
+
+                    transport.OnReceived -= pongProbeHandler;
+
+                    message = Serializer.SerializeUpgradeMessage();
+                    await transport
+                        .SendAsync(new List<SerializedItem> { message }, connectionTimeoutToken)
                         .ConfigureAwait(false);
 
                     Transport.Dispose();
                     Transport = transport;
                     Options.Transport = TransportProtocol.WebSocket;
                     transport.OnUpgraded();
-                    break;
+
+                    return;
                 }
                 catch (Exception e)
                 {
@@ -346,8 +378,6 @@ namespace SocketIOClient
                     OnReconnectError.TryInvoke(this, ex);
                 }
             }
-
-            _openedCompletionSource.SetResult(true);
         }
 
         private async Task<bool> AttemptAsync()
@@ -454,37 +484,36 @@ namespace SocketIOClient
 
         private async Task OpenedHandler(IMessage msg)
         {
-            await _transportCompletionSource.Task;
-            _transportCompletionSource = new TaskCompletionSource<bool>();
-            if (Options.AutoUpgrade
-                && Options.Transport == TransportProtocol.Polling
-                && msg.Upgrades.Contains("websocket"))
-            {
-                _ = UpgradeToWebSocket(msg);
-                return;
-            }
+                await _transportCompletionSource.Task;
+                _transportCompletionSource = new TaskCompletionSource<bool>();
+                if (Options.AutoUpgrade
+                    && Options.Transport == TransportProtocol.Polling
+                    && msg.Upgrades.Contains("websocket"))
+                {
+                    _ = UpgradeToWebSocket(msg);
+                }
 
-            _openedCompletionSource.SetResult(true);
-        }
+                _openedCompletionSource.SetResult(true);
+            }
 
 
         private async Task ConnectedHandler(IMessage msg)
         {
-            await _openedCompletionSource.Task;
-            _openedCompletionSource = new TaskCompletionSource<bool>();
+                await _openedCompletionSource.Task;
+                _openedCompletionSource = new TaskCompletionSource<bool>();
 
-            Id = msg.Sid;
-            Connected = true;
+                Id = msg.Sid;
+                Connected = true;
 
-            OnConnected.TryInvoke(this, EventArgs.Empty);
-            if (_attempts > 0)
-            {
-                OnReconnected.TryInvoke(this, _attempts);
+                OnConnected.TryInvoke(this, EventArgs.Empty);
+                if (_attempts > 0)
+                {
+                    OnReconnected.TryInvoke(this, _attempts);
+                }
+
+                _attempts = 0;
+                _connBackgroundSource.SetResult(null);
             }
-
-            _attempts = 0;
-            _connBackgroundSource.SetResult(null);
-        }
 
         private void DisconnectedHandler()
         {
@@ -606,6 +635,9 @@ namespace SocketIOClient
                         break;
                     case MessageType.BinaryAck:
                         BinaryAckMessageHandler(msg);
+                        break;
+                    default:
+                        Debug.WriteLine($"Error: {msg.Type}");
                         break;
                 }
             }
