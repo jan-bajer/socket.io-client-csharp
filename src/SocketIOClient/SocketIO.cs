@@ -314,7 +314,7 @@ namespace SocketIOClient
                     }
                 }
             }, cancellationToken);
-                }
+        }
 
         private async Task UpgradeToWebSocket(IMessage openedMessage)
         {
@@ -367,8 +367,7 @@ namespace SocketIOClient
                     Transport = transport;
                     Options.Transport = TransportProtocol.WebSocket;
                     transport.OnUpgraded();
-
-                    return;
+                    break;
                 }
                 catch (Exception e)
                 {
